@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:flutter/services.dart';
+import 'package:nekaido_pre/presentation/player/widgets/player_sidebar.dart';
 import 'package:window_manager/window_manager.dart';
 import '../../../providers/player/player_provider.dart';
 import 'widgets/player_overlay.dart';
@@ -9,7 +10,6 @@ import '../player/widgets/intents.dart';
 import '../player/widgets/pip_overlay.dart';
 import '../../../providers/library_provider.dart';
 import '../../core/logger.dart'; 
-import '';
 
 class PlayerScreen extends ConsumerStatefulWidget {
   final int animeId;
@@ -110,9 +110,13 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             ),
             EscapeIntent: CallbackAction<EscapeIntent>(
               onInvoke: (intent) async{
+                if (playerState.isSidebarOpen) {
+                  notifier.toggleSideBar();
+                  return null;
+                }
                 if (playerState.isPiP) {
-                   notifier.togglePiP();
-                   return null;
+                  notifier.togglePiP();
+                  return null;
                 }
                 bool isFull = await windowManager.isFullScreen();
                 if (isFull){
@@ -164,6 +168,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                       const PipOverlay()
                     else
                       const PlayerOverlay(),
+                    if(!playerState.isPiP)
+                      const PlayerSidebar(),
+
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 500), // Полсекунды на плавное появление
                         switchInCurve: Curves.easeOut,

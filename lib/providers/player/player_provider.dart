@@ -435,7 +435,7 @@ class PlayerNotifier extends StateNotifier<AppPlayerState> {
     if (!state.isUiVisible) return;
     
     _uiTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted && state.isPlaying) {
+      if (mounted && state.isPlaying && !state.isSidebarOpen) {
         state = state.copyWith(isUiVisible: false);
       }
     });
@@ -517,6 +517,16 @@ class PlayerNotifier extends StateNotifier<AppPlayerState> {
       final isFull = await windowManager.isFullScreen();
       await windowManager.setFullScreen(!isFull);
     }
+  }
+
+  void toggleSideBar() {
+    state = state.copyWith(isSidebarOpen: !state.isSidebarOpen);
+    if (state.isSidebarOpen) {
+      showUi();
+    } else {
+      _startUiHider();
+    }
+
   }
 
   Future<void> togglePiP() async {

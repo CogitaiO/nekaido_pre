@@ -162,6 +162,11 @@ class _PlayerProgressBarState extends ConsumerState<PlayerProgressBar> {
                 onPressed: () => notifier.togglePiP(),
               ),
               IconButton(
+                icon: const Icon(Icons.format_list_bulleted_rounded, color: Colors.white),
+                tooltip: "Серии и заметки",
+                onPressed: () => notifier.toggleSideBar(),
+              ),
+              IconButton(
                 iconSize: 28,
                 icon: const Icon(Icons.fullscreen_rounded, color: Colors.white),
                 onPressed: () => notifier.toggleFullscreen(),
