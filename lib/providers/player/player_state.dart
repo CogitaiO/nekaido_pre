@@ -14,7 +14,7 @@ class AppPlayerState {
   final bool isUiVisible;
   final bool isVideoCompleted;
   final bool isPiP;
-  
+  final bool isSidebarOpen;
   //Поля для дорожек
   final List<AudioTrack> audioTracks;
   final List<SubtitleTrack> subtitleTracks;
@@ -36,6 +36,7 @@ class AppPlayerState {
   this.isUiVisible = true,
   this.isVideoCompleted = false,
   this.isPiP = false,
+  this.isSidebarOpen = false,
 
   this.audioTracks = const [],
   this.subtitleTracks = const[],
@@ -58,6 +59,7 @@ class AppPlayerState {
     bool? isUiVisible,
     bool? isVideoCompleted,
     bool? isPiP,
+    bool? isSidebarOpen,
 
     List<AudioTrack>? audioTracks,
     List<SubtitleTrack>? subtitleTracks,
@@ -85,6 +87,7 @@ class AppPlayerState {
       externalSubsMap: externalSubsMap ?? this.externalSubsMap,
       isVideoCompleted: isVideoCompleted ?? this.isVideoCompleted,
       isPiP: isPiP ?? this.isPiP,
+      isSidebarOpen: isSidebarOpen ?? this.isSidebarOpen,
       skipIntervals: skipIntervals ?? this.skipIntervals,
       activeSkip: clearActiveSkip ? null : (activeSkip ?? this.activeSkip), 
     );
