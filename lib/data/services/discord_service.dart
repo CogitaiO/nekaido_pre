@@ -40,7 +40,7 @@ class DiscordService {
       // Формируем красивый таймер
       int? endTimestamp;
 
-      if (isPlaying && currentPositionSeconds != null && durationSeconds != null) {
+      if (isPlaying && currentPositionSeconds != null && durationSeconds != null && durationSeconds > 0) {
         // Подсчитываем, когда закончится серия в реальном времени
         final now = DateTime.now().millisecondsSinceEpoch;
         final leftSeconds = durationSeconds - currentPositionSeconds;
@@ -49,13 +49,13 @@ class DiscordService {
 
       _rpc!.updatePresence(
         DiscordPresence(
-          state: episode, // Показывается на второй строке: "Смотрит Эпизод 4"
-          details: title, // Показывается на первой строке: "Bleach"
-          largeImageKey: 'logo', // Название загруженной иконки в Discord Developer Portal
-          largeImageText: 'Nekaido Pro', // Текст при наведении на большую иконку
-          smallImageKey: isPlaying ? 'play' : 'pause', // Нужно тоже загрузить эти иконки в Discord
-          smallImageText: isPlaying ? 'Смотрит' : 'На паузе', // Текст при наведении на мини-иконку
-          endTimeStamp: endTimestamp, // Показывает: "Осталось 14:20"
+          state: episode, 
+          details: title, 
+          largeImageKey: 'logo', 
+          largeImageText: 'Nekaido', 
+          smallImageKey: isPlaying ? 'play' : 'pause', 
+          smallImageText: isPlaying ? 'Смотрит' : 'На паузе', 
+          endTimeStamp: endTimestamp, 
         ),
       );
     } catch (e) {

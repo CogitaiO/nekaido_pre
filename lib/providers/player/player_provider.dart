@@ -310,6 +310,7 @@ class PlayerNotifier extends StateNotifier<AppPlayerState> {
       state = state.copyWith(
         animeId: animeId,
         videoPath: path,
+        windowTitle: anime?.title,
         isPlaying: false,
         position: Duration.zero,
         isVideoCompleted: false,
@@ -405,9 +406,18 @@ class PlayerNotifier extends StateNotifier<AppPlayerState> {
     _startUiHider();
 
     final isGoingToPlay = !state.isPlaying; 
+
+    String epString = "Смотрит";
+    if (state.videoPath != null) {
+      final epIndex = state.playlist.indexOf(state.videoPath!) + 1;
+      if (epIndex > 0) epString = "Эпизод $epIndex";
+    }
+
     _discordService.updatePresence(
-      title: "Просмотр", 
-      episode: isGoingToPlay ? "Смотрит" : "На паузе",
+      title: state.windowTitle ?? 'Аниме',
+      episode: isGoingToPlay ? epString : "На паузе",
+      currentPositionSeconds: state.position.inSeconds,
+      durationSeconds: state.duration.inSeconds,  
       isPlaying: isGoingToPlay,
     );
   } 
