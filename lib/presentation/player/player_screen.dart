@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:flutter/services.dart';
@@ -90,6 +91,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           const SingleActivator(LogicalKeyboardKey.arrowUp): const VolumeIntent(5.0),
           const SingleActivator(LogicalKeyboardKey.arrowDown): const VolumeIntent(-5.0),
           const SingleActivator(LogicalKeyboardKey.keyP): const PiPIntent(),
+
+          const SingleActivator(LogicalKeyboardKey.backquote): const PanicIntent(),
         },
         child: Actions(
           actions: <Type, Action<Intent>>{
@@ -107,6 +110,34 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             ),
              VolumeIntent: CallbackAction<VolumeIntent>(
               onInvoke: (intent) => notifier.changeVolume(intent.delta),
+            ),
+            PanicIntent : CallbackAction<PanicIntent>(
+              onInvoke: (intent) async {
+                if (playerState.isPlaying) {
+                  notifier.togglePlay();
+                }
+
+                bool isFull = await windowManager.isFullScreen();
+                if (isFull) {
+                  await windowManager.setFullScreen(false);
+                }
+
+                await windowManager.minimize();
+
+                try {
+                  if (Platform.isWindows) {
+                    //Process.run('notepad.exe', []);
+                    Process.run('cmd',['/c', 'start', 'https://github.com']);
+                  } else if (Platform.isMacOS) {
+                     Process.run('open', ['-a', 'TextEdit']);
+                  } else if (Platform.isLinux) {
+                    Process.run('xdg-open', ['https://github.com']);
+                  }
+                } catch (e) {
+                  talker.error('Panic button: Unable to run the "working" app: $e');
+                }
+                return null;
+              },
             ),
             EscapeIntent: CallbackAction<EscapeIntent>(
               onInvoke: (intent) async{
@@ -141,7 +172,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                 onTapDown: (details) {
                   final now = DateTime.now();
                   final notifier = ref.read(playerProvider.notifier);
-
+                  if (ref.read(playerProvider).isSidebarOpen) {
+                    notifier.toggleSideBar(); 
+                    return; 
+                  }
                   if(_lastTap != null && now.difference(_lastTap!) < const Duration(milliseconds: 300)) {
                     notifier.toggleFullscreen();
                      _lastTap = null;
