@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:isar/isar.dart';
 import 'package:nekaido_pre/presentation/settings/settings_screen.dart'; // Проверьте правильность пути
 import '../../providers/library_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -163,6 +164,12 @@ class _SidebarIconState extends ConsumerState<_SidebarIcon> {
               );
             } else if (!widget.isBottom) {
               ref.read(selectedSidebarIndexProvider.notifier).state = widget.index;
+              if (widget.index == 5) {
+                final collections = ref.read(allCollectionsProvider);
+                if(collections.isNotEmpty && ref.read(selectedCollectionProvider) == null) {
+                  ref.read(selectedCollectionProvider.notifier).state = collections.first;
+                }
+              }
             }
           },
           child: AnimatedContainer(
@@ -190,35 +197,95 @@ class _TopBar extends ConsumerStatefulWidget {
 class _TopBarState extends ConsumerState<_TopBar> {
   final _debouncer = Debouncer(milliseconds: 300);
 
+  String _getTitle(int index) {
+    switch (index) {
+      case 1: return "Watching";
+      case 2: return "In plans";
+      case 3: return "Watched";
+      case 4: return "Abandoned ";
+      case 5: return "My collections";
+      default: return "Library";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-      child: Row(
-        children:[
-          const Text("Библиотека", style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-          const Spacer(),
-          SizedBox(
-            width: 300,
-            child: TextField(
-              onChanged: (value) {
-                _debouncer.run(() {
-                  ref.read(searchQueryProvider.notifier).state = value;
-                });
-              },
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: "Поиск...",
-                hintStyle: const TextStyle(color: Colors.white38),
-                prefixIcon: const Icon(Icons.search, color: Colors.white54),
-                filled: true,
-                fillColor: Colors.white.withValues(alpha: 0.05),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+    final index = ref.watch(selectedSidebarIndexProvider);
+    final allCollections = ref.watch(allCollectionsProvider);
+    final selectedCollections =  ref.watch(selectedCollectionProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsetsGeometry.fromLTRB(24, 24, 24, 8),
+          child: Row(
+            children: [
+              Text(_getTitle(index), style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              SizedBox(
+                width: 300,
+                child: TextField(
+                  onChanged: (value) {
+                    _debouncer.run(() {
+                      ref.read(searchQueryProvider.notifier).state = value;
+                    });
+                  },
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    hintText: "Search...",
+                    hintStyle: const TextStyle(color: Colors.white38),
+                    prefixIcon: const Icon(Icons.search_rounded, color: Colors.white54),
+                    filled: true,
+                    fillColor: Colors.white.withValues(alpha: 0.05),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none), 
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        ),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: index == 5
+                ? Container(
+                  height: 50,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: allCollections.isEmpty
+                      ? const Align(
+                        alignment: AlignmentGeometry.centerLeft,
+                        child: Text("You don't have any collections yet", style: TextStyle(color: Colors.white54)),
+                      )
+                    : ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: allCollections.length,
+                        itemBuilder: (context,i) {
+                          final collectionName = allCollections[i];
+                          final isSelected = selectedCollections == collectionName;
+                          return Padding(
+                            padding: EdgeInsetsGeometry.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(collectionName), 
+                              selected: isSelected,
+                              selectedColor: Colors.redAccent.withValues(alpha: 0.3),
+                              backgroundColor: Colors.white.withValues(alpha: 0.05),
+                              labelStyle: TextStyle(color: isSelected ? Colors.redAccent : Colors.white70),
+                              side: BorderSide(color: isSelected ? Colors.redAccent : Colors.transparent),
+                              onSelected: (selected) {
+                                if (selected) {
+                                  ref.read(selectedCollectionProvider.notifier).state = collectionName;
+                                } else {
+                                  ref.read(selectedCollectionProvider.notifier).state = null;
+                                }
+                              },
+                            ),
+                          );
+                        },
+                    ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }

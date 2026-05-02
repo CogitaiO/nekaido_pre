@@ -16,7 +16,7 @@ class AppPlayerState {
   final bool isPiP;
   final bool isSidebarOpen;
   final String? windowTitle;
-  //Поля для дорожек
+
   final List<AudioTrack> audioTracks;
   final List<SubtitleTrack> subtitleTracks;
   final AudioTrack? currentAudio;

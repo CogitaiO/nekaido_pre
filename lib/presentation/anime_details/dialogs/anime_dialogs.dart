@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:nekaido_pre/providers/library_provider.dart';
 
 import '../../../../domain/anime.dart';
 import '../../../../providers/repositories_provider.dart';
@@ -101,32 +102,83 @@ class AnimeDialogs {
 
   static void showCollectionDialog(BuildContext context, WidgetRef ref, Anime anime, Color accentColor) {
     TextEditingController controller = TextEditingController();
+
+    final allCollections = ref.read(allCollectionsProvider);
+    final  availableCollections = allCollections.where((c) => !anime.customCollections.contains(c)).toList();
+
     showDialog(
       context: context, 
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("В подборку", style: TextStyle(color: Colors.white)),
-        content: TextField(
-          controller: controller, style: TextStyle(color: Colors.white), autofocus: true,
-          decoration: InputDecoration(hintText: "Например: Любимое", focusedBorder: 
-                      UnderlineInputBorder(borderSide: BorderSide(color: accentColor))),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Отмена", style: TextStyle(color: Colors.white54))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: accentColor),
-            onPressed: () async {
-              if (controller.text.isNotEmpty) {
-                 anime.customCollections =[...anime.customCollections, controller.text.trim()];
-                 await ref.read(animeRepoProvider).saveAnime(anime);
-                 if (context.mounted) Navigator.pop(context);
-              }
-            },
-            child: const Text("Добавить", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1A1A1A),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(16)),
+              title: const Text("In collections", style: TextStyle(color: Colors.white)),
+              content: SizedBox(
+                width: 300,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: controller,
+                      style: const TextStyle(color: Colors.white),
+                      autofocus: true,
+                      decoration: InputDecoration(
+                        hintText: "New collections",
+                        focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: accentColor)),
+                        hintStyle: const TextStyle(color: Colors.white38), 
+                      ),
+                    ),
+
+                    if (availableCollections.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Text("Or choose from existing ones", style: TextStyle(color: Colors.white54, fontSize: 12)),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                          children: availableCollections.map((colName) {
+                          return ActionChip(
+                            label: Text(colName, style: const TextStyle(color: Colors.white)),
+                            backgroundColor: Colors.white.withValues(alpha: 0.1),
+                            side: BorderSide.none,
+                            onPressed: () {
+                              controller.text = colName;
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    ]
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel", style: TextStyle(color: Colors.white54)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: accentColor),
+                  onPressed: () async {
+                    final text = controller.text.trim();
+                    if(text.isNotEmpty) {
+                      if(!anime.customCollections.contains(text)) {
+                        anime.customCollections = [...anime.customCollections, text];
+                        await ref.read(animeRepoProvider).saveAnime(anime);
+                      }
+                      if (context.mounted) Navigator.pop(context);
+                    }
+                  },
+                  child: const Text("Add", style: TextStyle(color: Colors.white)),
+                  
+                ),
+              ],
+            );
+          },
+        );
+      }
     );
   }
 

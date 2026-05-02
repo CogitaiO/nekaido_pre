@@ -8,7 +8,7 @@ import 'dart:io';
 import '../domain/anime.dart';  
 import '../presentation/anime_details/anime_details_screen.dart';
 import '../../providers/repositories_provider.dart';
-
+import '../presentation/anime_details/dialogs/anime_dialogs.dart';
 
 class AnimeCard extends ConsumerStatefulWidget {
   final Anime anime;
@@ -32,11 +32,11 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
         tapPosition.dx, tapPosition.dy,
       ),
       items: [
-        const PopupMenuItem(value: 'sync_api', child: Text("Обновить данные из сети", style: TextStyle(color: Colors.white))),
-        const PopupMenuItem(value: 'edit', child: Text("Редактировать", style: TextStyle(color: Colors.white))),
-        const PopupMenuItem(value: 'collection', child: Text("В подборку", style: TextStyle(color: Colors.white))),
+        const PopupMenuItem(value: 'sync_api', child: Text("Refresh data from the network", style: TextStyle(color: Colors.white))),
+        const PopupMenuItem(value: 'edit', child: Text("Edir", style: TextStyle(color: Colors.white))),
+        const PopupMenuItem(value: 'collection', child: Text("To the collections", style: TextStyle(color: Colors.white))),
         const PopupMenuDivider(),
-        const PopupMenuItem(value: 'delete', child: Text("Удалить из библиотеки", style: TextStyle(color: Colors.redAccent))),
+        const PopupMenuItem(value: 'delete', child: Text("Delete from library", style: TextStyle(color: Colors.redAccent))),
       ],
     ).then((value) {
       if (value == 'delete'){
@@ -44,7 +44,7 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
       } else if (value == 'edit') {
         _showEditDialog(context, ref);
       } else if (value == 'collection') {
-        // Позже сделаем диалог подборок
+       AnimeDialogs.showCollectionDialog(context, ref, widget.anime, Colors.redAccent);
       } else if (value == 'sync_api') {
         _syncWithApi(context, ref);
       }
@@ -161,13 +161,13 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
       context: context, 
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text("Удалить тайтл?", style: TextStyle(color: Colors.white)),
-        content: const Text("Аниме будет удалено из базы данных. Сами видеофайлы останутся на диске.", 
+        title: const Text("Delete anime", style: TextStyle(color: Colors.white)),
+        content: const Text("The anime will be removed from the database. The video files themselves remain on the disk.", 
                             style: TextStyle(color: Colors.white70)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx), 
-            child: const Text("Отмена", style: TextStyle(color: Colors.white54)),
+            child: const Text("Cancel", style: TextStyle(color: Colors.white54)),
           ),
           ElevatedButton(
              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -175,7 +175,7 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
               ref.read(animeRepoProvider).deleteAnime(widget.anime.id);
               Navigator.pop(ctx);
              },
-             child: const Text("Удалить", style: TextStyle(color: Colors.white)),
+             child: const Text("Delete", style: TextStyle(color: Colors.white)),
           ),
         ],
       )
@@ -190,25 +190,25 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
       context: context, 
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text("Редактировать", style: TextStyle(color: Colors.white)),
+        title: const Text("Edit", style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: titleController,
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: "Название", labelStyle: TextStyle(color: Colors.redAccent)),
+              decoration: const InputDecoration(labelText: "Title", labelStyle: TextStyle(color: Colors.redAccent)),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: coverController,
               style: TextStyle(color: Colors.white),
               decoration: InputDecoration(
-                labelText: "URL Постера", 
+                labelText: "URL posters", 
                 labelStyle: TextStyle(color: Colors.redAccent),
                 suffixIcon: IconButton(
                   icon: const Icon(Icons.folder_open, color: Colors.redAccent),
-                  tooltip: "Выбрать с компьютера",
+                  tooltip: "Select from computer",
                   onPressed: () async {
                     FilePickerResult? result = await FilePicker.pickFiles(type: FileType.image);
                     if (result != null && result.files.single.path != null) {
@@ -232,7 +232,7 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
               );
               Navigator.pop(ctx);
             },
-            child: const Text("Сохранить", style: TextStyle(color: Colors.white)),
+            child: const Text("Save", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -241,7 +241,7 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
 
   Future<void> _syncWithApi(BuildContext context, WidgetRef ref) async {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Ищем данные для "${widget.anime.title}"...')),
+      SnackBar(content: Text('We are looking for data for "${widget.anime.title}"...')),
     );
     final shikimori = ShikimoriService();
     final meta = await shikimori.fetchAnimeDetails(widget.anime.title);
@@ -256,7 +256,7 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Данные успешно обновлены!'), 
+            content: Text('Data updated successfully!'), 
             backgroundColor: Colors.green
           ),
         );
@@ -265,7 +265,7 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Не удалось найти данные на Shikimori'), 
+            content: Text('Unable to find data on Shikimori'), 
             backgroundColor: Colors.redAccent
           ),
         );

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:isolate'; // Добавляем импорт
+import 'dart:isolate'; 
 import 'package:nekaido_pre/data/repositories/anime_repository.dart';
 import 'package:nekaido_pre/data/services/shikimori_service.dart';
 import 'package:nekaido_pre/domain/anime.dart';
