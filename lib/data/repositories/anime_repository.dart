@@ -139,6 +139,23 @@ class AnimeRepository {
     }
   }
   
+  Future <void> deleteNote(Id id, DateTime createdAt) async {
+    try {
+      await db.writeTxn(() async {
+        final anime = await db.animes.get(id);
+        if (anime == null) return;
+
+        final updateNotes = anime.notes.where((n) => n.createdAt != createdAt).toList();
+
+        anime.notes = updateNotes;
+        await db.animes.put(anime);
+        talker.info('Note is delete from "${anime.title}"');
+      });
+    } catch (e, st) {
+      talker.handle(e, st, "Ошибка удаления ошибки");
+    }
+  }
+
   // Удаление всей базы (для настроек)
   Future<void> clearAll() async {
     await db.writeTxn(() => db.animes.clear());
