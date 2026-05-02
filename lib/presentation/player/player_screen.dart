@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +10,8 @@ import '../player/widgets/intents.dart';
 import '../player/widgets/pip_overlay.dart';
 import '../../../providers/library_provider.dart';
 import '../../core/logger.dart'; 
+
+
 
 class PlayerScreen extends ConsumerStatefulWidget {
   final int animeId;
@@ -26,20 +27,19 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   late final VideoController _videoController;
   DateTime? _lastTap;
   late final AppLifecycleListener _lifecycleListener;
+  final FocusNode _playerFocusNode = FocusNode();
+  
   @override
   void initState() {
     super.initState();
-    talker.info('PlayerScreen: Инициализация экрана');
+    talker.info('PlayerScreen: Initializing screen');
     final playerNotifier = ref.read(playerProvider.notifier);
     final prefs = ref.read(sharedPrefsProvider);
     
-    // Получаем настройку
     final hwdecMode = prefs.getString('pref_hwdec') ?? 'auto-safe';
-    
-    // Проверяем, выбрал ли пользователь "Отключено (Процессор)"
     final isHardwareDisabled = (hwdecMode == 'no');
 
-    talker.debug('PlayerScreen: Создаем VideoController (hwdec: $hwdecMode, enableHardwareAcceleration: ${!isHardwareDisabled})');
+    talker.debug('PlayerScreen: Create VideoController (hwdec: $hwdecMode, enableHardwareAcceleration: ${!isHardwareDisabled})');
 
     _videoController = VideoController(
       playerNotifier.player,
@@ -49,36 +49,37 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       )
     );
 
-    // Принудительно дублируем настройку в сам движок (для надежности)
     (playerNotifier.player.platform as dynamic)?.setProperty('hwdec', hwdecMode);
 
     _lifecycleListener = AppLifecycleListener(
       onHide: () {
-        talker.info('Приложение свернуто. Продолжаем играть в фоне');
+        talker.info('App minimized. Continuing playback in background');
       }
     );
 
     Future.microtask(() {
-      talker.info('PlayerScreen: Вызываем loadVideo');
+      talker.info('PlayerScreen: Invoke loadVideo');
       playerNotifier.loadVideo(widget.animeId, widget.videoPath);
     });
   }
+
   @override
   void dispose() {
-    talker.info('PlayerScreen: Начинаем закрытие экрана (dispose)');
+    talker.info('PlayerScreen: Closing screen (dispose)');
     try {
-      // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Это спасет от зависания намертво!
-      talker.info('PlayerScreen: VideoController успешно уничтожен');
+      talker.info('PlayerScreen: VideoController destroyed successfully');
     } catch (e, st) {
-      talker.handle(e, st, 'PlayerScreen: Ошибка при уничтожении VideoController');
+      talker.handle(e, st, 'PlayerScreen: Error destroying VideoController');
     }
     super.dispose();
+    _playerFocusNode.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final notifier = ref.read(playerProvider.notifier);
     final playerState = ref.watch(playerProvider);
+    
     return Scaffold(
       backgroundColor: Colors.black,
       body: Shortcuts(
@@ -91,139 +92,120 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           const SingleActivator(LogicalKeyboardKey.arrowUp): const VolumeIntent(5.0),
           const SingleActivator(LogicalKeyboardKey.arrowDown): const VolumeIntent(-5.0),
           const SingleActivator(LogicalKeyboardKey.keyP): const PiPIntent(),
-
-          const SingleActivator(LogicalKeyboardKey.backquote): const PanicIntent(),
-        },
+        }, 
         child: Actions(
-          actions: <Type, Action<Intent>>{
-            PlayPauseIntent: CallbackAction<PlayPauseIntent>(
-              onInvoke: (intent) => notifier.togglePlay(),
-            ),
-            FullScreenIntent: CallbackAction<FullScreenIntent>(
-              onInvoke: (intent) => notifier.toggleFullscreen(),
-            ),
-            PiPIntent: CallbackAction<PiPIntent>(
-              onInvoke: (intent) => notifier.togglePiP(),
-            ),
-            SeekIntent: CallbackAction<SeekIntent>(
-              onInvoke: (intent) => notifier.seekRelative(intent.seconds),
-            ),
-             VolumeIntent: CallbackAction<VolumeIntent>(
-              onInvoke: (intent) => notifier.changeVolume(intent.delta),
-            ),
-            PanicIntent : CallbackAction<PanicIntent>(
-              onInvoke: (intent) async {
-                if (playerState.isPlaying) {
-                  notifier.togglePlay();
+          actions: <Type, Action<Intent>> {
+            PlayPauseIntent: _PlayerShortcutAction<PlayPauseIntent>(_playerFocusNode,(_) => notifier.togglePlay()),
+            
+            FullScreenIntent: _PlayerShortcutAction<FullScreenIntent>(_playerFocusNode, (_) {
+              notifier.toggleFullscreen();
+              _playerFocusNode.requestFocus();
+            }),
+
+            PiPIntent: _PlayerShortcutAction<PiPIntent>(_playerFocusNode,(_) => notifier.togglePiP()),
+            
+            SeekIntent: _PlayerShortcutAction<SeekIntent>(_playerFocusNode,(intent) => notifier.seekRelative(intent.seconds)),
+            VolumeIntent: _PlayerShortcutAction<VolumeIntent>(_playerFocusNode,(intent) => notifier.changeVolume(intent.delta)),
+            
+              EscapeIntent: CallbackAction<EscapeIntent>(
+              onInvoke: (_) async {
+                if (!_playerFocusNode.hasPrimaryFocus) {
+                  _playerFocusNode.requestFocus();
+                  return null; 
                 }
 
-                bool isFull = await windowManager.isFullScreen();
-                if (isFull) {
-                  await windowManager.setFullScreen(false);
-                }
-
-                await windowManager.minimize();
-
-                try {
-                  if (Platform.isWindows) {
-                    //Process.run('notepad.exe', []);
-                    Process.run('cmd',['/c', 'start', 'https://github.com']);
-                  } else if (Platform.isMacOS) {
-                     Process.run('open', ['-a', 'TextEdit']);
-                  } else if (Platform.isLinux) {
-                    Process.run('xdg-open', ['https://github.com']);
-                  }
-                } catch (e) {
-                  talker.error('Panic button: Unable to run the "working" app: $e');
-                }
-                return null;
-              },
-            ),
-            EscapeIntent: CallbackAction<EscapeIntent>(
-              onInvoke: (intent) async{
                 if (playerState.isSidebarOpen) {
                   notifier.toggleSideBar();
                   return null;
                 }
+                
                 if (playerState.isPiP) {
                   notifier.togglePiP();
                   return null;
                 }
+                
                 bool isFull = await windowManager.isFullScreen();
-                if (isFull){
+                if(isFull) {
                   await windowManager.setFullScreen(false);
-                }else {
-                  if (!context.mounted) return null; 
+                } else {
+                  if(!context.mounted) return null;
                   Navigator.pop(context);
                 }
                 return null;
               },
             ),
-          }, 
+          },
           child: Focus(
+            focusNode: _playerFocusNode,
             autofocus: true,
-            child: MouseRegion(
-              cursor: ref.watch(playerProvider.select((s) => s.isUiVisible))
-                 ? SystemMouseCursors.basic
-                 : SystemMouseCursors.none, 
-              onHover: (_) => notifier.showUi(),
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapDown: (details) {
-                  final now = DateTime.now();
-                  final notifier = ref.read(playerProvider.notifier);
-                  if (ref.read(playerProvider).isSidebarOpen) {
-                    notifier.toggleSideBar(); 
-                    return; 
-                  }
-                  if(_lastTap != null && now.difference(_lastTap!) < const Duration(milliseconds: 300)) {
-                    notifier.toggleFullscreen();
-                     _lastTap = null;
-                  } else {
-                    notifier.togglePlay();
-                    _lastTap = now;
-                  }
-                },
-                child: Stack(
-                   children:[
-                    Positioned.fill(
-                      child: Container(
-                        color: Colors.black,
-                        child: Center(
-                          child: Video(
-                            controller: _videoController,
-                            controls: NoVideoControls,
-                            fit: BoxFit.contain,
+            child: Stack(
+              children:[
+                // === СЛОЙ 1: ПЛЕЕР ===
+                Positioned.fill(
+                  child: MouseRegion(
+                    cursor: playerState.isUiVisible ? SystemMouseCursors.basic : SystemMouseCursors.none,
+                    onHover: (_) => notifier.showUi(),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (details) {
+                        if (!_playerFocusNode.hasPrimaryFocus) {
+                          _playerFocusNode.requestFocus();
+                        }
+
+                        final now = DateTime.now();
+                        
+                        if(playerState.isSidebarOpen) {
+                          notifier.toggleSideBar();
+                          return;
+                        }
+
+                        if(_lastTap != null && now.difference(_lastTap!) < const Duration(milliseconds: 300)) {
+                          notifier.toggleFullscreen();
+                          _lastTap = null;
+                        } else {
+                          notifier.togglePlay();
+                          _lastTap = now;
+                        }
+                      },
+                      child: Stack(
+                        children:[
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.black,
+                              child: Center(
+                                child: Video(
+                                  controller: _videoController,
+                                  controls: NoVideoControls,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          if(playerState.isPiP) const PipOverlay() else const PlayerOverlay(),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 500),
+                            switchInCurve: Curves.easeOut,
+                            switchOutCurve: Curves.easeIn,
+                            child: playerState.isVideoCompleted
+                                ? _buildNextEpisodeScreen(ref, notifier)
+                                : const SizedBox.shrink(),
+                          ),
+                        ],
                       ),
                     ),
-                    if (playerState.isPiP)
-                      const PipOverlay()
-                    else
-                      const PlayerOverlay(),
-                    if(!playerState.isPiP)
-                      const PlayerSidebar(),
-
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 500), // Полсекунды на плавное появление
-                        switchInCurve: Curves.easeOut,
-                        switchOutCurve: Curves.easeIn,
-                        child: playerState.isVideoCompleted 
-                          ? _buildNextEpisodeScreen(ref, notifier)
-                          : const SizedBox.shrink(), // Пустой прозрачный виджет, когда флаг false
-                     ),
-                  ],
+                  ),
                 ),
-              ),
+
+                if (!playerState.isPiP)
+                  PlayerSidebar(playerFocusNode: _playerFocusNode), 
+              ],
             ),
           ),
         ),
       ),
     );
   }
-
-  Widget _buildNextEpisodeScreen(WidgetRef ref, dynamic notifier) {
+    Widget _buildNextEpisodeScreen(WidgetRef ref, dynamic notifier) {
     return Container(
       key: const ValueKey('NextEpisodeScreen'),
       color: Colors.black.withValues(alpha: 0.85),
@@ -232,7 +214,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
-              "Следующая серия начнется через...",
+              "Next episode starts in...",
               style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
             ),
 
@@ -284,16 +266,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                     side: const BorderSide(color: Colors.white54),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
-                  child: const Text("Отмена", style: TextStyle(fontSize: 16)),
+                  child: const Text("Cancel", style: TextStyle(fontSize: 16)),
                 ),
                 const SizedBox(width: 16),
                 ElevatedButton(
                   onPressed: () => notifier.playNext(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
+                    backgroundColor: Colors.redAccent,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
-                  child: const Text("Включить сейчас", style: TextStyle(color: Colors.white, fontSize: 16)),
+                  child: const Text("", style: TextStyle(color: Colors.white, fontSize: 16)),
                 ),
               ],
             )
@@ -301,5 +283,25 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         ),
       ),
     );
+  }
+}
+
+
+class _PlayerShortcutAction<T extends Intent> extends Action<T> {
+  final FocusNode playerFocusNode;
+  final void Function(T intent) onInvokeCallback;
+
+  _PlayerShortcutAction(this.playerFocusNode, this.onInvokeCallback);
+
+  @override
+  bool isEnabled(T intent) {
+
+    return playerFocusNode.hasPrimaryFocus;
+  }
+
+  @override
+  Object? invoke(T intent) {
+    onInvokeCallback(intent);
+    return null;
   }
 }
