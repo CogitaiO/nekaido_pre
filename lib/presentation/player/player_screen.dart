@@ -5,12 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:nekaido_pre/presentation/player/widgets/player_sidebar.dart';
 import 'package:window_manager/window_manager.dart';
 import '../../../providers/player/player_provider.dart';
+import 'widgets/seek_ripple_overlay.dart';
 import 'widgets/player_overlay.dart';
 import '../player/widgets/intents.dart';
 import '../player/widgets/pip_overlay.dart';
 import '../../../providers/library_provider.dart';
 import '../../core/logger.dart'; 
-
+import 'dart:async';
 
 
 class PlayerScreen extends ConsumerStatefulWidget {
@@ -28,6 +29,10 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
   DateTime? _lastTap;
   late final AppLifecycleListener _lifecycleListener;
   final FocusNode _playerFocusNode = FocusNode();
+  int _seekAccumulator = 0;
+  Timer? _seekHideTimer;
+  bool _showLeftRipple = false;
+  bool _showRightRipple = false;
   
   @override
   void initState() {
@@ -147,25 +152,56 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                     onHover: (_) => notifier.showUi(),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTapDown: (details) {
-                        if (!_playerFocusNode.hasPrimaryFocus) {
+                      onTap: () {
+                        if(!_playerFocusNode.hasPrimaryFocus) {
                           _playerFocusNode.requestFocus();
                         }
 
-                        final now = DateTime.now();
-                        
                         if(playerState.isSidebarOpen) {
                           notifier.toggleSideBar();
                           return;
                         }
 
-                        if(_lastTap != null && now.difference(_lastTap!) < const Duration(milliseconds: 300)) {
-                          notifier.toggleFullscreen();
-                          _lastTap = null;
-                        } else {
-                          notifier.togglePlay();
-                          _lastTap = now;
+                      },
+                      onDoubleTapDown: (TapDownDetails details) {
+                        final screenWidth = MediaQuery.of(context).size.width;
+                        final tapX = details.globalPosition.dx;
+                         _seekHideTimer?.cancel();
+
+                        if (tapX < screenWidth * 0.3) {
+                          notifier.seekRelative(-10);
+                          setState(() {
+                            _showRightRipple = false;
+                            _showLeftRipple = true;
+                            _seekAccumulator = _seekAccumulator > 0 ? - 10 : _seekAccumulator - 10;
+                          });
                         }
+                        else if (tapX > screenWidth * 0.7) {
+                          notifier.seekRelative(10);
+                          setState(() {
+                            _showRightRipple = true;
+                            _showLeftRipple = false;
+                             _seekAccumulator = _seekAccumulator < 0 ? 10 : _seekAccumulator + 10;
+                          });
+                        }
+                        else {
+                          notifier.toggleFullscreen();
+                          return;
+                        }
+
+                        _seekHideTimer = Timer(const Duration(milliseconds: 600), () {
+                          if (mounted) {
+                            setState(() {
+                                _showLeftRipple = false;
+                              _showRightRipple = false;
+                            }); 
+                            Future.delayed(const Duration(milliseconds: 200), () {
+                              if (mounted && !_showLeftRipple && !_showRightRipple) {
+                                 setState(() => _seekAccumulator = 0);
+                              }
+                            });
+                          }
+                        });
                       },
                       child: Stack(
                         children:[
@@ -181,6 +217,14 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                               ),
                             ),
                           ),
+                          Positioned.fill(
+                            child: SeekRippleOverlay(
+                              isLeft: _showLeftRipple,
+                              isRight: _showRightRipple,
+                              seconds: _seekAccumulator,
+                            ),
+                          ),
+
                           if(playerState.isPiP) const PipOverlay() else const PlayerOverlay(),
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 500),

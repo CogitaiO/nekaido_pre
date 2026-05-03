@@ -72,11 +72,27 @@ class PlayerOverlay extends ConsumerWidget {
                       leading: Row(
                         mainAxisSize: MainAxisSize.min,
                         children:[
-                          const SizedBox(width: 8),
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                            onPressed: () => Navigator.pop(context),
-                            tooltip: "Вернуться назад",
+                          const SizedBox(width: 4),
+                          Tooltip(
+                            message: "Back",
+                            padding: const EdgeInsets.all(12),
+                            margin: const EdgeInsets.only(top: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.black26.withValues(alpha: 0.9),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.white24),
+                            ),
+                            textStyle: const TextStyle(
+                              color: Colors.white38,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            waitDuration: const Duration(milliseconds: 500), // через сколько появится
+                            showDuration: const Duration(seconds: 2),
+                            child: IconButton(
+                              icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                              onPressed: () => Navigator.pop(context),
+                            ),
                           ),
                           const SizedBox(width: 8),
                         ],

@@ -16,6 +16,7 @@ class AppPlayerState {
   final bool isPiP;
   final bool isSidebarOpen;
   final String? windowTitle;
+  final double playbackSpeed;
 
   final List<AudioTrack> audioTracks;
   final List<SubtitleTrack> subtitleTracks;
@@ -39,6 +40,7 @@ class AppPlayerState {
   this.isPiP = false,
   this.isSidebarOpen = false,
   this.windowTitle,
+  this.playbackSpeed = 1.0, 
 
   this.audioTracks = const [],
   this.subtitleTracks = const[],
@@ -63,6 +65,7 @@ class AppPlayerState {
     bool? isPiP,
     bool? isSidebarOpen,
     String? windowTitle,
+    double? playbackSpeed,
 
     List<AudioTrack>? audioTracks,
     List<SubtitleTrack>? subtitleTracks,
@@ -94,6 +97,7 @@ class AppPlayerState {
       skipIntervals: skipIntervals ?? this.skipIntervals,
       activeSkip: clearActiveSkip ? null : (activeSkip ?? this.activeSkip), 
       windowTitle: windowTitle ?? this.windowTitle,
+      playbackSpeed: playbackSpeed ?? this.playbackSpeed,
     );
   }
 }

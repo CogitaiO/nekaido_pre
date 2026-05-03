@@ -15,7 +15,7 @@ class _PlayerProgressBarState extends ConsumerState<PlayerProgressBar> {
   bool _isDragging = false;
   double _dragValue = 0.0;
   bool _isHoveringBar = false; // Отслеживаем наведение на прогресс-бар
-
+  
   @override
   Widget build(BuildContext context) {
     final position = ref.watch(playerProvider.select((s) => s.position));
@@ -24,6 +24,7 @@ class _PlayerProgressBarState extends ConsumerState<PlayerProgressBar> {
     final isPlaying = ref.watch(playerProvider.select((s) => s.isPlaying));
     final notifier = ref.read(playerProvider.notifier);
     final activeSkips = ref.watch(playerProvider.select((s) => s.skipIntervals));
+    final playbackSpeed = ref.watch(playerProvider.select((s) => s.playbackSpeed));
     double maxDuration = duration.inSeconds.toDouble();
     double currentPosition = _isDragging ? _dragValue : position.inSeconds.toDouble();
     if (currentPosition > maxDuration) currentPosition = maxDuration;
@@ -145,10 +146,61 @@ class _PlayerProgressBarState extends ConsumerState<PlayerProgressBar> {
 
               const Spacer(),
 
-              // ПРАВАЯ ГРУППА: Настройки, PiP, Fullscreen
+              Theme(
+                data: Theme.of(context).copyWith(
+                  popupMenuTheme: PopupMenuThemeData(
+                    color: const Color(0xFF1A1A1A),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadiusGeometry.circular(12)),
+                  ),
+                ), 
+                child: PopupMenuButton<double>(
+                  tooltip: "Playback Speed",
+                  offset: const Offset(0, -250),
+                  onSelected: (speed) => notifier.setPlaybackSpeed(speed),
+                  itemBuilder: (context) =>[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((speed) {
+                     return PopupMenuItem<double>(
+                      value: speed,
+                      child: Row(
+                        children: [
+                          Icon(
+                            playbackSpeed == speed ? Icons.check_circle_rounded : Icons.circle_outlined,
+                            color: playbackSpeed == speed ? Colors.redAccent : Colors.white38,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            speed == 1.0 ? "Normal" : "${speed}x",
+                            style: TextStyle(
+                              color: playbackSpeed == speed ? Colors.redAccent : Colors.white,
+                              fontWeight: playbackSpeed == speed ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                     );
+                  }).toList(),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: playbackSpeed != 1.0 ? Colors.redAccent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: playbackSpeed != 1.0 ? Colors.redAccent.withValues(alpha: 0.5) : Colors.transparent)
+                    ),
+                    child: Text(
+                       "${playbackSpeed}x",
+                       style: TextStyle(
+                        color: playbackSpeed != 1.0 ? Colors.redAccent : Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                       ),
+                    ),
+                  ),
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.subtitles_rounded, color: Colors.white),
-                tooltip: "Озвучка и Субтитры",
+                tooltip: "Dubs & Subs",
                 onPressed: () {
                   showDialog(
                     context: context, 
@@ -158,12 +210,12 @@ class _PlayerProgressBarState extends ConsumerState<PlayerProgressBar> {
               ),
               IconButton(
                 icon: const Icon(Icons.picture_in_picture_alt_rounded, color: Colors.white),
-                tooltip: "Картинка в картинке",
+                tooltip: "Picture in picture",
                 onPressed: () => notifier.togglePiP(),
               ),
               IconButton(
                 icon: const Icon(Icons.format_list_bulleted_rounded, color: Colors.white),
-                tooltip: "Серии и заметки",
+                tooltip: "Episodes and notes",
                 onPressed: () => notifier.toggleSideBar(),
               ),
               IconButton(

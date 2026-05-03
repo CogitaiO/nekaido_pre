@@ -513,11 +513,24 @@ class PlayerNotifier extends StateNotifier<AppPlayerState> {
     super.dispose();
   }
 
+  void setPlaybackSpeed(double speed) {
+    player.setRate(speed);
+    state = state.copyWith(playbackSpeed: speed);
+    talker.info('Playback speed set to ${speed}x');
+    showUi();
+  }
+
   // Перемотка
   void seekRelative(int seconds) {
-    final newPosition = state.position + Duration(seconds: seconds);
-    player.seek(newPosition);
+    int newSeconds = state.position.inSeconds + seconds;
+    if(newSeconds < 0 ) newSeconds = 0;
+    if (state.duration.inSeconds > 0 && newSeconds > state.duration.inSeconds) {
+      newSeconds = state.duration.inSeconds;
+    }
+
+    player.seek(Duration(seconds: newSeconds));
     showUi();
+    talker.debug('Seek relative: $seconds sec. New pos: $newSeconds');
   }
 
   Future<void> toggleFullscreen() async {
