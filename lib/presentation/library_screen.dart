@@ -9,6 +9,7 @@ import '../../core/debouncer.dart';
 import '../widgets/media_card.dart';
 import '../widgets/custom_title_bar.dart'; // <-- Исправлена опечатка с кавычкой
 import '../../../../providers/settings_provider.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LibraryScreen extends ConsumerWidget {
   const LibraryScreen({super.key});
@@ -117,7 +118,7 @@ class _LeftSidebar extends StatelessWidget {
               ),
             ),
           ),
-          const _SidebarIcon(icon: Icons.settings, tooltip: "Настройки", index: -1, isBottom: true),
+          const _SidebarIcon(icon: Icons.settings, tooltip: "Settings", index: -1, isBottom: true),
           const SizedBox(height: 24),
         ],
       ),
@@ -181,7 +182,35 @@ class _SidebarIconState extends ConsumerState<_SidebarIcon> {
               color: isSelected ? Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.15) : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(widget.icon, color: color, size: 28),
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children:[
+                Icon(widget.icon, color: color, size: 28),
+                
+                // Пасхалка: рисуем корону ТОЛЬКО если это иконка настроек (index == -1) 
+                // и режим Yatoro активирован!
+                if (widget.isBottom && widget.index == -1 && ref.watch(yatoroModeProvider))
+                  Positioned(
+                    top: -16, // Сдвигаем корону чуть выше шестеренки
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(begin: 0.0, end: 1.0),
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.elasticOut, // Пружинистый эффект
+                      builder: (context, scale, child) {
+                        return Transform.scale(
+                          scale: scale,
+                          child: const Icon(
+                            Icons.star_border_purple500_outlined, 
+                            color: Colors.amberAccent, 
+                            size: 22,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
-
+import 'package:flutter/services.dart';
 import '../../widgets/escapable.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../providers/repositories_provider.dart';
+import 'package:media_kit/media_kit.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget{
   const SettingsScreen({super.key});
@@ -16,68 +17,115 @@ class SettingsScreen extends ConsumerStatefulWidget{
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   int _selectedIndex = 0;
+  
+  // Буфер для Konami Code
+  final List<String> _keyBuffer =[];
+
+  // Метод проверки секретного кода
+  void _checkYatoroCode(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      // Проверяем, нажат ли Shift
+      final isShiftPressed = HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.shiftLeft) || 
+                             HardwareKeyboard.instance.isLogicalKeyPressed(LogicalKeyboardKey.shiftRight);
+
+      if (isShiftPressed) {
+        // Добавляем нажатую букву
+        _keyBuffer.add(event.logicalKey.keyLabel.toLowerCase());
+        
+        // Держим только последние 6 символов
+        if (_keyBuffer.length > 6) {
+          _keyBuffer.removeAt(0);
+        }
+
+        // Если совпало со словом yatoro
+        if (_keyBuffer.join('') == 'yatoro') {
+          final isUnlocked = ref.read(yatoroModeProvider);
+          if (!isUnlocked) {
+            // Активируем режим!
+            ref.read(yatoroModeProvider.notifier).state = true;
+            
+            // Если захочешь добавить звук Sunder:
+            final sfx = Player();
+            sfx.open(Media('asset:///assets/icon/sounds/sunder.mp3'), play: true);
+            
+            _keyBuffer.clear();
+          }
+        }
+      } else {
+        // Если Shift отпустили - сбрасываем буфер (защита от случайных срабатываний)
+        _keyBuffer.clear();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final accentColor = Color(ref.watch(settingsProvider).accentColorValue);
 
-    return Escapable(
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0F0F0F),
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-            onPressed: () => Navigator.pop(context), 
+    // Оборачиваем весь экран в Focus, чтобы ловить нажатия клавиш
+    return Focus(
+      autofocus: true, // Фокус автоматически ставится сюда
+      onKeyEvent: (node, event) {
+        _checkYatoroCode(event);
+        return KeyEventResult.ignored; // ignored значит, что нажатия пойдут дальше в другие виджеты, если нужно
+      },
+      child: Escapable(
+        child: Scaffold(
+          backgroundColor: const Color(0xFF0F0F0F),
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            title: const Text("Settings", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
-          title: const Text("Settings", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        ),
-        body: Padding(
-          padding: const EdgeInsetsGeometry.symmetric(horizontal: 24, vertical: 16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 250,
-                child: Column(
-                  children: [
-                    _MenuTab(title: "Appearance", icon: Icons.palette_rounded, index: 0, currentIndex: _selectedIndex,
-                    accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 0)),
-                    _MenuTab(title: "Player", icon: Icons.play_circle_rounded, index: 1, currentIndex: _selectedIndex,
-                    accentColor: accentColor,  onTap: () => setState(() => _selectedIndex = 1)),
-                     _MenuTab(title: "Library", icon: Icons.play_circle_rounded, index: 2, currentIndex: _selectedIndex,
-                    accentColor: accentColor,  onTap: () => setState(() => _selectedIndex = 2)),
-                     _MenuTab(title: "Advanced", icon: Icons.play_circle_rounded, index: 3, currentIndex: _selectedIndex,
-                    accentColor: accentColor,  onTap: () => setState(() => _selectedIndex = 3)),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 32),
-
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (child, animation) => FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(animation),
-                      child: child,
-                    ),
+          body: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children:[
+                // === ЛЕВОЕ МЕНЮ (SIDEBAR) ===
+                SizedBox(
+                  width: 250,
+                  child: Column(
+                    children:[
+                      _MenuTab(title: "Appearance", icon: Icons.palette_rounded, index: 0, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 0)),
+                      _MenuTab(title: "Player", icon: Icons.play_circle_rounded, index: 1, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 1)),
+                      _MenuTab(title: "Library", icon: Icons.folder_copy_rounded, index: 2, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 2)),
+                      _MenuTab(title: "Advanced", icon: Icons.settings_applications_rounded, index: 3, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 3)),
+                    ],
                   ),
-                  child: _buildContent(_selectedIndex, accentColor, ref),
                 ),
-              ),
-            ],
+                
+                const SizedBox(width: 32),
+                
+                // === ПРАВЫЙ КОНТЕНТ ===
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(animation),
+                        child: child,
+                      ),
+                    ),
+                    child: _buildContent(_selectedIndex, accentColor, ref),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  // Твой метод _buildContent остается без изменений
   Widget _buildContent(int index, Color accentColor, WidgetRef ref) {
-    switch(index) {
+    switch (index) {
       case 0: return _AppearanceSettings(key: const ValueKey(0), accentColor: accentColor);
       case 1: return _PlayerSettings(key: const ValueKey(1), accentColor: accentColor);
       case 2: return _LibrarySettings(key: const ValueKey(2), accentColor: accentColor);
