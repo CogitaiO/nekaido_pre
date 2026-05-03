@@ -109,5 +109,3 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
     _prefs.setInt('pref', color.toARGB32());
   }
 }
-
-final yatoroModeProvider = StateProvider<bool>((ref) => false);
