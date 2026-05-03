@@ -8,6 +8,7 @@ import '../../providers/settings_provider.dart';
 import '../../core/debouncer.dart';
 import '../widgets/media_card.dart';
 import '../widgets/custom_title_bar.dart'; // <-- Исправлена опечатка с кавычкой
+import '../../../../providers/settings_provider.dart';
 
 class LibraryScreen extends ConsumerWidget {
   const LibraryScreen({super.key});
@@ -43,7 +44,7 @@ class LibraryScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.redAccent,
+        backgroundColor: Color(ref.watch(settingsProvider).accentColorValue),
         onPressed: () async {
           final String? folderPath = await FilePicker.getDirectoryPath();
           if (folderPath != null) {
@@ -144,7 +145,7 @@ class _SidebarIconState extends ConsumerState<_SidebarIcon> {
   @override
   Widget build(BuildContext context) {
     final isSelected = ref.watch(selectedSidebarIndexProvider.select((val) => val == widget.index)) && !widget.isBottom;
-    final color = isSelected ? Colors.redAccent : (_isHovered ? Colors.white : Colors.white38);
+    final color = isSelected ? Color(ref.watch(settingsProvider).accentColorValue) : (_isHovered ? Colors.white : Colors.white38);
 
     return Tooltip(
       message: widget.tooltip,
@@ -177,7 +178,7 @@ class _SidebarIconState extends ConsumerState<_SidebarIcon> {
             margin: const EdgeInsets.symmetric(vertical: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isSelected ? Colors.redAccent.withValues(alpha: 0.15) : Colors.transparent,
+              color: isSelected ? Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.15) : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(widget.icon, color: color, size: 28),
@@ -267,10 +268,10 @@ class _TopBarState extends ConsumerState<_TopBar> {
                             child: ChoiceChip(
                               label: Text(collectionName), 
                               selected: isSelected,
-                              selectedColor: Colors.redAccent.withValues(alpha: 0.3),
+                              selectedColor: Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.3),
                               backgroundColor: Colors.white.withValues(alpha: 0.05),
-                              labelStyle: TextStyle(color: isSelected ? Colors.redAccent : Colors.white70),
-                              side: BorderSide(color: isSelected ? Colors.redAccent : Colors.transparent),
+                              labelStyle: TextStyle(color: isSelected ? Color(ref.watch(settingsProvider).accentColorValue) : Colors.white70),
+                              side: BorderSide(color: isSelected ? Color(ref.watch(settingsProvider).accentColorValue) : Colors.transparent),
                               onSelected: (selected) {
                                 if (selected) {
                                   ref.read(selectedCollectionProvider.notifier).state = collectionName;
@@ -343,7 +344,7 @@ class _ContentGridState extends ConsumerState<_ContentGrid> {
           ),
           actions:[
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+              style: ElevatedButton.styleFrom(backgroundColor: Color(ref.watch(settingsProvider).accentColorValue)),
               onPressed: () {
                 prefs.setBool('has_seen_vpn_warning', true);
                 Navigator.pop(ctx);

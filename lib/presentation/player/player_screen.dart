@@ -12,6 +12,7 @@ import '../player/widgets/pip_overlay.dart';
 import '../../../providers/library_provider.dart';
 import '../../core/logger.dart'; 
 import 'dart:async';
+import '../../../../providers/settings_provider.dart';
 
 
 class PlayerScreen extends ConsumerStatefulWidget {
@@ -278,7 +279,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                     children: [
                       CircularProgressIndicator(
                         value: value,
-                        color: Colors.redAccent,
+                        color: Color(ref.watch(settingsProvider).accentColorValue),
                         backgroundColor: Colors.white12,
                         strokeWidth: 8,
                       ),
@@ -316,7 +317,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                 ElevatedButton(
                   onPressed: () => notifier.playNext(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
+                    backgroundColor: Color(ref.watch(settingsProvider).accentColorValue),
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   ),
                   child: const Text("", style: TextStyle(color: Colors.white, fontSize: 16)),

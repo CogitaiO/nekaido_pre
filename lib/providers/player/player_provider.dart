@@ -36,7 +36,7 @@ class PlayerNotifier extends StateNotifier<AppPlayerState> {
   int _lastStateSeconds = -1; // Для троттлинга обновления UI
   bool _isEpisodeMarkedWatched = false; // Защита от спама в БД на 90%
   bool _isLoading = false; // Защита от двойного нажатия "Следующая серия"
-
+  bool _isAutoSkipping = false;
   bool _wasFullScreen = false;
   bool _wasMaximized = false;
   Size _previousSize = const Size(1280, 720);
@@ -80,6 +80,19 @@ class PlayerNotifier extends StateNotifier<AppPlayerState> {
       for (var skip in state.skipIntervals) {
         if (currentPosInDouble >= skip.startTime && currentPosInDouble <= skip.endTime) {
           currentActiveSkip = skip;
+          
+          if (_prefs.getBool('pref_autoskip') == true && !_isAutoSkipping) {
+            _isAutoSkipping = true; 
+            talker.info('Auto-skipping ${skip.type}...');
+            
+            player.seek(Duration(milliseconds: (skip.endTime * 1000).toInt() + 500)); 
+            
+  
+            Future.delayed(const Duration(seconds: 2), () {
+              _isAutoSkipping = false;
+            });
+          }
+          // ==============================
           break;
         }
       }

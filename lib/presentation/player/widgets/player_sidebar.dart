@@ -5,7 +5,7 @@ import 'dart:io';
 import '../../../../providers/player/player_provider.dart';
 import '../../../../providers/library_provider.dart';
 import 'package:flutter/services.dart';
-
+import '../../../../providers/settings_provider.dart';
 class PlayerSidebar extends ConsumerWidget{
   final FocusNode playerFocusNode; 
   const PlayerSidebar({super.key, required this.playerFocusNode});
@@ -106,16 +106,16 @@ class PlayerSidebar extends ConsumerWidget{
 
             return ListTile(
               contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-              tileColor: isCurrent ? Colors.redAccent.withValues(alpha: 0.1) : Colors.transparent,
+              tileColor: isCurrent ? Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.1) : Colors.transparent,
               leading: Icon(
                 isCurrent ? Icons.play_circle_filled_rounded :
                 (isWatched ? Icons.check_circle_outline : Icons.circle_outlined),
-                color: isCurrent ? Colors.redAccent : (isWatched ? Colors.lightGreen : Colors.white38),
+                color: isCurrent ? Color(ref.watch(settingsProvider).accentColorValue) : (isWatched ? Colors.lightGreen : Colors.white38),
               ),
               title: Text(
                 "Эпизод ${index + 1}",
                 style: TextStyle(
-                  color: isCurrent ? Colors.redAccent : Colors.white,
+                  color: isCurrent ? Color(ref.watch(settingsProvider).accentColorValue) : Colors.white,
                   fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal
                 ),
               ),
@@ -227,7 +227,7 @@ class _EpisodeNoteTabState extends ConsumerState<_EpisodeNoteTab> {
               ),
               const SizedBox(width: 8),
               IconButton(
-                style: IconButton.styleFrom(backgroundColor: Colors.redAccent.withValues(alpha: 0.2)),
+                style: IconButton.styleFrom(backgroundColor: Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.2)),
                 icon: const Icon(Icons.add_rounded,color: Colors.redAccent),
                 onPressed: () => _saveNote(animeId, currentPath),
               ),
@@ -277,9 +277,9 @@ class _EpisodeNoteTabState extends ConsumerState<_EpisodeNoteTab> {
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.redAccent.withValues(alpha: 0.2),
+                            color: Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+                            border: Border.all(color: Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.5)),
                           ),
                           child: Text(
                             _formatTime(timestamp),
@@ -296,7 +296,7 @@ class _EpisodeNoteTabState extends ConsumerState<_EpisodeNoteTab> {
                           ref.read(animeRepoProvider).deleteNote(animeId, note.createdAt!);
                         }
                       },
-                      hoverColor: Colors.redAccent.withValues(alpha: 0.2),
+                      hoverColor: Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.2),
                     ),
                   );
                 },

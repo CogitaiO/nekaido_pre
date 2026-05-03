@@ -8,6 +8,7 @@ import '../../../../domain/anime.dart';
 import '../../../../providers/repositories_provider.dart';
 import '../../player/player_screen.dart';
 import '../dialogs/anime_dialogs.dart';
+import '../../../../providers/settings_provider.dart';
 
 class LeftControlPanel extends ConsumerWidget {
   final Anime anime;
@@ -175,7 +176,7 @@ class _StatusMenu extends ConsumerWidget {
                         fontSize: 16,  fontWeight: FontWeight.bold,
                          color: anime.status == AnimeStatus.planned ? Colors.white :
                                 anime.status == AnimeStatus.watching ? Colors.blueAccent :
-                                anime.status == AnimeStatus.completed ? Colors.green : Colors.redAccent,
+                                anime.status == AnimeStatus.completed ? Colors.green : Color(ref.watch(settingsProvider).accentColorValue),
                       ),
                     ),
                     const Icon(Icons.arrow_drop_down, color: Colors.white54),

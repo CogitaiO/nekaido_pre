@@ -4,6 +4,7 @@ import 'package:nekaido_pre/presentation/player/widgets/skip_interval_track_shap
 import 'track_selector_dialog.dart';
 import '../../../../providers/player/player_provider.dart';
 import '../../../../domain/anime.dart';
+import '../../../../providers/settings_provider.dart';
 
 class PlayerProgressBar extends ConsumerStatefulWidget {
   const PlayerProgressBar({super.key});
@@ -50,9 +51,9 @@ class _PlayerProgressBarState extends ConsumerState<PlayerProgressBar> {
                     enabledThumbRadius: _isHoveringBar || _isDragging ? 6.0 : 0.0,
                   ),
                   overlayShape: SliderComponentShape.noOverlay, // Убираем родную тень Material
-                  activeTrackColor: Colors.redAccent,
+                  activeTrackColor: Color(ref.watch(settingsProvider).accentColorValue),
                   inactiveTrackColor: Colors.white24,
-                  thumbColor: Colors.redAccent,
+                  thumbColor: Color(ref.watch(settingsProvider).accentColorValue),
 
                   trackShape: SkipIntervalTrackShape(
                     intervals: activeSkips.map((s) => SkipIntervalDb()
@@ -164,14 +165,14 @@ class _PlayerProgressBarState extends ConsumerState<PlayerProgressBar> {
                         children: [
                           Icon(
                             playbackSpeed == speed ? Icons.check_circle_rounded : Icons.circle_outlined,
-                            color: playbackSpeed == speed ? Colors.redAccent : Colors.white38,
+                            color: playbackSpeed == speed ? Color(ref.watch(settingsProvider).accentColorValue) : Colors.white38,
                             size: 18,
                           ),
                           const SizedBox(width: 12),
                           Text(
                             speed == 1.0 ? "Normal" : "${speed}x",
                             style: TextStyle(
-                              color: playbackSpeed == speed ? Colors.redAccent : Colors.white,
+                              color: playbackSpeed == speed ? Color(ref.watch(settingsProvider).accentColorValue) : Colors.white,
                               fontWeight: playbackSpeed == speed ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
@@ -183,14 +184,14 @@ class _PlayerProgressBarState extends ConsumerState<PlayerProgressBar> {
                     margin: const EdgeInsets.only(right: 12),
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: playbackSpeed != 1.0 ? Colors.redAccent.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
+                      color: playbackSpeed != 1.0 ? Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: playbackSpeed != 1.0 ? Colors.redAccent.withValues(alpha: 0.5) : Colors.transparent)
+                      border: Border.all(color: playbackSpeed != 1.0 ? Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.5) : Colors.transparent)
                     ),
                     child: Text(
                        "${playbackSpeed}x",
                        style: TextStyle(
-                        color: playbackSpeed != 1.0 ? Colors.redAccent : Colors.white,
+                        color: playbackSpeed != 1.0 ? Color(ref.watch(settingsProvider).accentColorValue) : Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                        ),
