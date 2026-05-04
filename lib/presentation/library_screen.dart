@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:isar/isar.dart';
 import 'package:nekaido_pre/presentation/settings/settings_screen.dart'; // Проверьте правильность пути
 import '../../providers/library_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../core/debouncer.dart';
 import '../widgets/media_card.dart';
 import '../widgets/custom_title_bar.dart'; // <-- Исправлена опечатка с кавычкой
-import '../../../../providers/settings_provider.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
 
 class LibraryScreen extends ConsumerWidget {
   const LibraryScreen({super.key});
@@ -45,7 +43,7 @@ class LibraryScreen extends ConsumerWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Color(ref.watch(settingsProvider).accentColorValue),
+        backgroundColor: Theme.of(context).colorScheme.primary, 
         onPressed: () async {
           final String? folderPath = await FilePicker.getDirectoryPath();
           if (folderPath != null) {
@@ -53,7 +51,7 @@ class LibraryScreen extends ConsumerWidget {
             
             if (!context.mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Сканируем новую папку..."))
+              const SnackBar(content: Text("Scanning folder..."))
             );
 
             final scanner = ref.read(scannerProvider);
@@ -61,13 +59,13 @@ class LibraryScreen extends ConsumerWidget {
 
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Папка добавлена в библиотеку!"), backgroundColor: Colors.green)
+                const SnackBar(content: Text("Folder added to library"), backgroundColor: Colors.green)
               );
             }
           }
         },
         icon: const Icon(Icons.create_new_folder_rounded, color: Colors.white),
-        label: const Text("Добавить папку", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text("Add folder", style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -89,10 +87,10 @@ class _LeftSidebar extends StatelessWidget {
             decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(8)),
             child: Container(
               padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.redAccent,
-                boxShadow:[BoxShadow(color: Colors.redAccent, blurRadius: 10, spreadRadius: -2)],
+                color: Theme.of(context).colorScheme.primary,
+                boxShadow:[BoxShadow(color: Theme.of(context).colorScheme.primary, blurRadius: 10, spreadRadius: -2)],
               ),
               child: const Icon(Icons.movie_creation, color: Colors.white, size: 24),
             ),
@@ -145,8 +143,9 @@ class _SidebarIconState extends ConsumerState<_SidebarIcon> {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary; 
     final isSelected = ref.watch(selectedSidebarIndexProvider.select((val) => val == widget.index)) && !widget.isBottom;
-    final color = isSelected ? Color(ref.watch(settingsProvider).accentColorValue) : (_isHovered ? Colors.white : Colors.white38);
+    final color = isSelected ? primaryColor : (_isHovered ? Colors.white : Colors.white38);
 
     return Tooltip(
       message: widget.tooltip,
@@ -179,7 +178,7 @@ class _SidebarIconState extends ConsumerState<_SidebarIcon> {
             margin: const EdgeInsets.symmetric(vertical: 8),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isSelected ? Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.15) : Colors.transparent,
+              color: isSelected ? primaryColor.withValues(alpha: 0.15) : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
            child: Icon(widget.icon, color: color, size: 28),
@@ -362,7 +361,7 @@ class _ContentGridState extends ConsumerState<_ContentGrid> {
   Widget build(BuildContext context) {
     final libraryAsync = ref.watch(libraryProvider);
     return libraryAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator(color: Colors.redAccent)),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => Center(child: Text("Ошибка БД: $err", style: const TextStyle(color: Colors.white))),
       data: (allAnimes) {
         final filteredList = ref.watch(filteredAnimeProvider);

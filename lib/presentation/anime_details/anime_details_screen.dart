@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/library_provider.dart';
@@ -32,7 +31,7 @@ class AnimeDetailsScreen extends ConsumerWidget{
             const CustomTitleBar(),
             Expanded(
               child: animeSync.when(
-                loading: () => const Center(child: CircularProgressIndicator(color: Colors.redAccent)),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, _) => Center(child: Text("Ошибка: $err", style: const TextStyle(color: Colors.white))),  
                 data: (anime) {
                   if (anime == null) return const Center(child: Text("Тайтл не найден")); 

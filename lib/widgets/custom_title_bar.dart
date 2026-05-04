@@ -76,7 +76,7 @@ class _CustomTitleBarState extends State<CustomTitleBar> with WindowListener {
             widget.leading!
           else ...[
             const SizedBox(width: 16),
-            const Icon(Icons.movie_filter, color: Colors.redAccent, size: 18),
+            Icon(Icons.movie_filter, color: Theme.of(context).colorScheme.primary, size: 18),
             const SizedBox(width: 8),
           ],
 

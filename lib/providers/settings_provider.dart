@@ -106,6 +106,6 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
 
   void updateAccentColor(Color color) {
     state = state.copyWith(accentColorValue: color.toARGB32());
-    _prefs.setInt('pref', color.toARGB32());
+    _prefs.setInt('pref_color', color.toARGB32());
   }
 }

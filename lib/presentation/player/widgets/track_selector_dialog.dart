@@ -22,8 +22,6 @@ class TrackSelectorDialog  extends ConsumerWidget{
           child: Column(
             children: [
               const TabBar(
-                indicatorColor: Colors.redAccent,
-                labelColor: Colors.redAccent,
                 unselectedLabelColor: Colors.white54,
                 tabs: [
                   Tab(icon: Icon(Icons.audiotrack_rounded), text: "Озвучка"),
@@ -119,13 +117,13 @@ class TrackSelectorDialog  extends ConsumerWidget{
           title: Text(
             trackName, 
             style: TextStyle(
-              color: isSelected ? Colors.redAccent : Colors.white, 
+              color: isSelected ? Theme.of(context).colorScheme.primary : Colors.white,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal
             ),
             maxLines: 2, 
             overflow: TextOverflow.ellipsis,
           ),
-          trailing: isSelected ? const Icon(Icons.check, color: Colors.redAccent) : null,
+          trailing: isSelected ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary) : null,
           onTap: () {
             onSelect(track);
             Navigator.pop(context);

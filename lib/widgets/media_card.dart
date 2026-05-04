@@ -98,7 +98,7 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
                               imageUrl: widget.anime.coverUrl!,
                               fit: BoxFit.cover,
                               memCacheWidth: 300,
-                              placeholder: (context, url) => const Center(child: CircularProgressIndicator(color: Colors.redAccent)),
+                              placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
                               errorWidget: (context, url, error) => const Icon(Icons.heart_broken_rounded, color: Colors.white24, size: 40),
                             )
                           : Image.file(
@@ -127,10 +127,11 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
                             Positioned(
                               bottom: 0, left: 0, right: 0,
                                child: LinearProgressIndicator(
+                                
                                 value: widget.anime.watchProgress,
-                                 backgroundColor: Colors.transparent,
-                                 color: Colors.redAccent,
-                                 minHeight: 4,
+                                color: Theme.of(context).colorScheme.primary,
+                                backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                minHeight: 4,
                                ),
                             ),
                         ],
@@ -197,7 +198,7 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
             TextField(
               controller: titleController,
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: "Title", labelStyle: TextStyle(color: Colors.redAccent)),
+              decoration: InputDecoration(labelText: "Title", labelStyle: TextStyle(color: Theme.of(context).colorScheme.primary)),
             ),
             const SizedBox(height: 16),
             TextField(
@@ -207,7 +208,7 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
                 labelText: "URL posters", 
                 labelStyle: TextStyle(color: Colors.redAccent),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.folder_open, color: Colors.redAccent),
+                  icon: Icon(Icons.folder_open, color: Theme.of(context).colorScheme.primary),
                   tooltip: "Select from computer",
                   onPressed: () async {
                     FilePickerResult? result = await FilePicker.pickFiles(type: FileType.image);
@@ -264,9 +265,9 @@ class _AnimeCardState extends ConsumerState<AnimeCard> {
     } else {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Unable to find data on Shikimori'), 
-            backgroundColor: Colors.redAccent
+            backgroundColor: Theme.of(context).colorScheme.error
           ),
         );
       }

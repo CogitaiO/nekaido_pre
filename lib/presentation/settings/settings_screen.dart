@@ -5,6 +5,8 @@ import '../../widgets/escapable.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/library_provider.dart';
 import '../../providers/repositories_provider.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+import '../../widgets/custom_title_bar.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget{
   const SettingsScreen({super.key});
@@ -16,56 +18,62 @@ class SettingsScreen extends ConsumerStatefulWidget{
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   int _selectedIndex = 0;
 
-  @override
+ @override
   Widget build(BuildContext context) {
     final accentColor = Color(ref.watch(settingsProvider).accentColorValue);
 
     return Escapable(
       child: Scaffold(
         backgroundColor: const Color(0xFF0F0F0F),
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: const Text("Settings", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children:[
-              SizedBox(
-                width: 250,
-                child: Column(
+        // Убрали AppBar! Теперь используем Column:
+        body: Column(
+          children:[
+            // НАШ КАСТОМНЫЙ ТАЙТЛ БАР
+            CustomTitleBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text("Settings", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+            
+            // ОСНОВНОЙ КОНТЕНТ (обернут в Expanded, чтобы занять остаток экрана)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children:[
-                    _MenuTab(title: "Appearance", icon: Icons.palette_rounded, index: 0, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 0)),
-                    _MenuTab(title: "Player", icon: Icons.play_circle_rounded, index: 1, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 1)),
-                    _MenuTab(title: "Library", icon: Icons.folder_copy_rounded, index: 2, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 2)),
-                    _MenuTab(title: "Advanced", icon: Icons.settings_applications_rounded, index: 3, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 3)),
+                    SizedBox(
+                      width: 250,
+                      child: Column(
+                        children:[
+                          _MenuTab(title: "Appearance", icon: Icons.palette_rounded, index: 0, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 0)),
+                          _MenuTab(title: "Player", icon: Icons.play_circle_rounded, index: 1, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 1)),
+                          _MenuTab(title: "Library", icon: Icons.folder_copy_rounded, index: 2, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 2)),
+                          _MenuTab(title: "Advanced", icon: Icons.settings_applications_rounded, index: 3, currentIndex: _selectedIndex, accentColor: accentColor, onTap: () => setState(() => _selectedIndex = 3)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 32),
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        transitionBuilder: (child, animation) => FadeTransition(
+                          opacity: animation,
+                          child: SlideTransition(
+                            position: Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(animation),
+                            child: child,
+                          ),
+                        ),
+                        child: _buildContent(_selectedIndex, accentColor, ref),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              
-              const SizedBox(width: 32),
-              
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (child, animation) => FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(animation),
-                      child: child,
-                    ),
-                  ),
-                  child: _buildContent(_selectedIndex, accentColor, ref),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -90,39 +98,63 @@ class _AppearanceSettings extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
+    final currentColor = Color(settings.accentColorValue);
 
-    final colors = [
-      Colors.redAccent, Colors.blueAccent, Colors.greenAccent, 
-      Colors.purpleAccent, Colors.orangeAccent, Colors.pinkAccent,
-    ];
+    final List<Color> presetColors = [
+    Color(0xFFF8BBD0), Color(0xFFE1BEE7), Color(0xFFD1C4E9), Color(0xFFC5CAE9),
+    Color(0xFFBBDEFB), Color(0xFFB3E5FC), Color(0xFFB2DFDB), Color(0xFFDCEDC8),
+    Color(0xFF546E7A), Color(0xFF7E57C2), Color(0xFF26A69A), Color(0xFF66BB6A),
+    Color(0xFF9CCC65), Color(0xFFFFB74D), Color(0xFFFFA726), Color(0xFFFF8A65),
+    Color(0xFF263238), Color(0xFF303F9F), Color(0xFF880E4F), Color(0xFF1B5E20),
+];
 
-    return ListView(children: [
+    return ListView(children:[
       _SectionHeader(title: "Theme & Colors"),
       _SettingsCard(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            children:[
               const Text("App Accent Color", style: TextStyle(color: Colors.white, fontSize: 16)),
               const SizedBox(height: 16),
-              Row(
-                children: colors.map((c) {
-                  final isSelected = settings.accentColorValue == c.toARGB32();
-                  return GestureDetector(
-                    onTap: () => notifier.updateAccentColor(c),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children:[
+                  ...presetColors.map((c) {
+                    final isSelected = settings.accentColorValue == c.toARGB32();
+                    return GestureDetector(
+                      onTap: () => notifier.updateAccentColor(c),
+                      child: Container(
+                        margin: const EdgeInsets.only(right: 12),
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(
+                          color: c, shape: BoxShape.circle,
+                          border: isSelected ? Border.all(color: Colors.white, width: 3) : null,
+                          boxShadow: isSelected ?[BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 10)] :[],
+                        ),
+                        child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
+                      ),
+                    );
+                  }),
+                  
+                  GestureDetector(
+                    onTap: () => _showColorPickerDialog(context, currentColor, notifier),
+                    
                     child: Container(
-                      margin: const EdgeInsets.only(right: 12),
                       width: 40, height: 40,
                       decoration: BoxDecoration(
-                        color: c, shape: BoxShape.circle,
-                        border: isSelected ? Border.all(color: Colors.white, width: 3) : null,
-                        boxShadow: isSelected ?[BoxShadow(color: c.withValues(alpha: 0.5), blurRadius: 10)] :[],
+                        shape: BoxShape.circle,
+                        gradient: const SweepGradient(
+                          colors:[Colors.red, Colors.yellow, Colors.green, Colors.blue, Colors.purple, Colors.red],
+                        ),
+                        border: Border.all(color: Colors.white54, width: 2),
                       ),
-                      child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 20) : null,
+                      child: const Icon(Icons.colorize, color: Colors.white, size: 20),
                     ),
-                  );
-                }).toList(),
+                  )
+                ],
               ),
             ],
           ),
@@ -140,6 +172,46 @@ class _AppearanceSettings extends ConsumerWidget {
         ),
       ),
     ]);
+  }
+
+  void _showColorPickerDialog(BuildContext context, Color initialColor, AppSettingsNotifier notifier) {
+    Color tempColor = initialColor;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A1A),
+        title: const Text('Pick Custom Color', style: TextStyle(color: Colors.white)),
+        content: SingleChildScrollView(
+          child: ColorPicker(
+            pickerColor: tempColor,
+            onColorChanged: (color) {
+              tempColor = color; 
+            },
+            colorPickerWidth: 300,
+            pickerAreaHeightPercent: 0.7,
+            enableAlpha: false, 
+            displayThumbColor: true,
+            hexInputBar: true, 
+            hexInputController: TextEditingController(text: '#${initialColor.toHexString().substring(2)}'),
+          ),
+        ),
+        actions:[
+          TextButton(
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: initialColor),
+            child: const Text('Apply', style: TextStyle(color: Colors.white)),
+            onPressed: () {
+              notifier.updateAccentColor(tempColor);
+              Navigator.pop(ctx);
+            },
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -366,8 +438,8 @@ class _AdvancedSettings extends ConsumerWidget{
         _SectionHeader(title: "Danger Zone"),
          _SettingsCard(
           child: ListTile(
-            iconColor: Colors.redAccent,
-            textColor: Colors.redAccent,
+            iconColor: Theme.of(context).colorScheme.error,
+            textColor: Theme.of(context).colorScheme.error,
             leading: const Icon(Icons.delete_forever),
             title: const Text("Clear Database", style: TextStyle(fontWeight: FontWeight.bold)),
             subtitle: const Text("Removes all titles, watch history, and notes. Media files on disk will NOT be deleted.", 

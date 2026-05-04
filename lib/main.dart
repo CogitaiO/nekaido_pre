@@ -14,6 +14,7 @@ import 'data/repositories/anime_repository.dart';
 import 'providers/repositories_provider.dart';
 import 'presentation/library_screen.dart';
 import 'providers/library_provider.dart';
+import 'providers/settings_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,21 +68,41 @@ void main() async {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final accentColorValue = ref.watch(settingsProvider).accentColorValue;
+    final accentColor = Color(accentColorValue);
+    final onAccentColor = accentColor.computeLuminance() > 0.5 ? Colors.black : Colors.white;
     return MaterialApp(
-      title: 'Nekaido Pro',
+      title: 'Nekaido',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(useMaterial3: true),
-      // Указываем наш первый экран
+      theme: ThemeData(
+        brightness: Brightness.dark,
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF0F0F0F),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: accentColor,
+          brightness: Brightness.dark,
+        ).copyWith(
+          primary: accentColor,
+          onPrimary: onAccentColor,
+          secondary: accentColor,
+          onSecondary: onAccentColor,
+        ),
+
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: accentColor,
+          selectionColor: accentColor.withValues(alpha: 0.3),
+          selectionHandleColor: accentColor,
+        ),
+      ),
       home: const LibraryScreen(), 
     );
   }
 }
 
-// А LibraryScreen перенеси в отдельный файл в папку presentation!
 
 

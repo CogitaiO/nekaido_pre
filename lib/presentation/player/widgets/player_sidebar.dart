@@ -4,7 +4,6 @@ import 'package:nekaido_pre/providers/repositories_provider.dart';
 import 'dart:io';
 import '../../../../providers/player/player_provider.dart';
 import '../../../../providers/library_provider.dart';
-import 'package:flutter/services.dart';
 import '../../../../providers/settings_provider.dart';
 class PlayerSidebar extends ConsumerWidget{
   final FocusNode playerFocusNode; 
@@ -54,8 +53,6 @@ class PlayerSidebar extends ConsumerWidget{
                   ),
                 ),
                 const TabBar(
-                  indicatorColor: Colors.redAccent,
-                  labelColor: Colors.redAccent,
                   unselectedLabelColor: Colors.white54,
                   dividerColor: Colors.white12,
                   tabs: [
@@ -91,7 +88,7 @@ class PlayerSidebar extends ConsumerWidget{
     final animeAsync = ref.watch(animeDetailsProvider(animeId));
 
     return animeAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator(color: Colors.redAccent)),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (_, __) => const Center(child: Text("Loading error", style: TextStyle(color: Colors.white54))),
       data: (anime) {
         if (anime == null) return const SizedBox.shrink();
@@ -228,7 +225,7 @@ class _EpisodeNoteTabState extends ConsumerState<_EpisodeNoteTab> {
               const SizedBox(width: 8),
               IconButton(
                 style: IconButton.styleFrom(backgroundColor: Color(ref.watch(settingsProvider).accentColorValue).withValues(alpha: 0.2)),
-                icon: const Icon(Icons.add_rounded,color: Colors.redAccent),
+                icon: Icon(Icons.add_rounded,color: Theme.of(context).colorScheme.primary),
                 onPressed: () => _saveNote(animeId, currentPath),
               ),
             ],
@@ -239,8 +236,8 @@ class _EpisodeNoteTabState extends ConsumerState<_EpisodeNoteTab> {
 
         Expanded(
           child: animeAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator(color: Colors.redAccent)),
-            error: (e, _) => Center(child: Text("Error: $e", style: const TextStyle(color: Colors.redAccent))),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text("Error: $e", style: TextStyle(color: Theme.of(context).colorScheme.error))),
             data: (anime) {
               if (anime == null) return const SizedBox.shrink();
               final episodeNotes = anime.notes.where((n) => n.episodePath == currentPath).toList()
@@ -283,7 +280,7 @@ class _EpisodeNoteTabState extends ConsumerState<_EpisodeNoteTab> {
                           ),
                           child: Text(
                             _formatTime(timestamp),
-                            style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13),
+                            style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13),
                           ),
                         ),
                       ),
